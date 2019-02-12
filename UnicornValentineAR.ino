@@ -8,6 +8,11 @@ const int JOY_X_PIN = 0;
 const int JOY_Y_PIN = 1;
 const int JOY_BUTTON_PIN = 3;
 
+const int LED_L_PIN = 7;
+const int LED_R_PIN = 6;
+int ledCount = 0;
+bool ledMode = true;
+
 Servo servo;
 int current_position = 90;
 const int MOVE_DELTA = 2;
@@ -20,23 +25,50 @@ void setup() {
 
   pinMode(JOY_BUTTON_PIN, INPUT);
   digitalWrite(JOY_BUTTON_PIN, LOW);
+
+   pinMode(LED_L_PIN, OUTPUT);
+   pinMode(LED_R_PIN, OUTPUT);
 }
 
 void loop() {
-  //scan();
- int y_pos = analogRead(JOY_Y_PIN);
- // right
- if (y_pos < 300 && current_position > 10) {
-  current_position -= MOVE_DELTA;
- } else if (y_pos > 800 && current_position < 180 ) {
+  bool moved = handleMovement();
+  handleLEDs(moved);
+  delay(MOVE_DELAY);
+}
+
+void handleLEDs(bool moved) {
+  if (ledCount++ == 5) {
+    ledCount = 0;
+    ledMode = !ledMode;
+  }
+  
+  digitalWrite(LED_L_PIN, HIGH);
+  digitalWrite(LED_R_PIN, HIGH);
+  if (moved && !ledMode) {
+    digitalWrite(LED_L_PIN, LOW);
+    digitalWrite(LED_R_PIN, LOW);
+  }
+}
+
+bool handleMovement() {
+  bool moved = false;
+  int y_pos = analogRead(JOY_Y_PIN);
+  // right
+  if (y_pos < 300 && current_position > 10) {
+    current_position -= MOVE_DELTA;
+    moved = true;
+  } else if (y_pos > 800 && current_position < 180 ) {
   current_position += MOVE_DELTA;
- }
- servo.write(current_position);
- Serial.print("Pos: ");
- Serial.print(current_position);
- Serial.print(" | Y: ");
- Serial.println(y_pos);
- delay(MOVE_DELAY);
+  moved = true;
+  }
+  if (moved) {
+    servo.write(current_position);
+    Serial.print("Pos: ");
+    Serial.print(current_position);
+    Serial.print(" | Y: ");
+    Serial.println(y_pos);
+  }
+  return moved;
 }
 
 
